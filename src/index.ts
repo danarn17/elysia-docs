@@ -9,6 +9,11 @@ class Note {
 
 const app = new Elysia()
   .use(swagger())
+  .onError(({ error, code }) => { 
+    if (code === 'NOT_FOUND') return 'Not Found :('
+
+    console.error(error) 
+  }) 
   .use(note)
   .use(user)
   // .get("/hello", () => "Do you miss me?")
