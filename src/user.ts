@@ -1,5 +1,6 @@
 import { Elysia, t } from 'elysia'
-export const user = new Elysia({ prefix: '/user' })
+
+export const userService = new Elysia({ name: 'user/service' })
     .state({
         user: {} as Record<string, string>,
         session: {} as Record<number, string>
@@ -19,6 +20,8 @@ export const user = new Elysia({ prefix: '/user' })
         ),
         optionalSession: t.Optional(t.Ref('session'))
     })
+export const user = new Elysia({ prefix: '/user' })
+    .use(userService)
     .put(
         '/sign-up',
         async ({ body: { username, password }, store, error }) => {
