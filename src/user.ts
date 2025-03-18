@@ -20,6 +20,28 @@ export const userService = new Elysia({ name: 'user/service' })
         ),
         optionalSession: t.Optional(t.Ref('session'))
     })
+    .macro({
+        isSignIn(enabled: boolean) {
+            if (!enabled) return
+            
+            return {
+                beforeHandle({ error, cookie: { token }, store: { session } }) {
+                    if (!token.value)
+                        return error(401, {
+                            success: false,
+                            message: 'Unauthorized'
+                        })
+                    const username = session[token.value as unknown as number]
+                    
+                    if (!username)
+                        return error(401, {
+                            success: false,
+                            message:'Unauthorized'
+                        })
+                }
+            }
+        }
+    })
 export const user = new Elysia({ prefix: '/user' })
     .use(userService)
     .put(
@@ -88,17 +110,13 @@ export const user = new Elysia({ prefix: '/user' })
         '/profile', 
         ({ cookie: { token }, store: { session }, error }) => { 
             const username = session[token.value] 
-            if (!username) 
-                return error(401, { 
-                    success: false, 
-                    message: 'Unauthorized'
-                }) 
             return { 
                 success: true, 
                 username 
             } 
         }, 
         { 
+            isSignIn: true,
             cookie: 'session'
         } 
     ) 
