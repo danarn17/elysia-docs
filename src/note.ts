@@ -1,22 +1,40 @@
-import { Elysia,error,t } from 'elysia'
+import { Elysia, error, t } from 'elysia'
+import { getUserId, userService } from './user'
 
+const memo = t.Object({ 
+	data: t.String(), 
+	author: t.String() 
+}) 
+
+type Memo = typeof memo.static 
 class Note{
-    constructor(public data: string[] = ['Moondrop']) { }
+    constructor( 
+		public data: Memo[] = [ 
+			{ 
+				data: 'Moonhalo', 
+				author: 'excaldev'
+			} 
+		] 
+	) {} 
     
-    add(note: string) {
+    add(note: Memo) {
         this.data.push(note)
         return this.data
     }
     remove(index: number) {
         return this.data.splice(index,1)
     }
-    update(index: number, note: string) {
-        return (this.data[index]=note)
-    }
+    update(index: number, note: Partial<Memo>) { 
+        return (this.data[index] = { ...this.data[index], ...note }) 
+    } 
 }
 
-export const note = new Elysia({prefix:'/note'})
+export const note = new Elysia({ prefix: '/note' })
+    .use(userService) 
     .decorate('note', new Note())
+    .model({ 
+    	memo: t.Omit(memo, ['author']) 
+    }) 
     .onTransform(function log({ body, params, path, request: { method } }) { 
         console.log(`${method} ${path}`, { 
             body, 
@@ -24,11 +42,13 @@ export const note = new Elysia({prefix:'/note'})
         }) 
     })
     .get("/", ({ note }) => note.data)
-    .put('/', ({ note, body: { data } }) => note.add(data), { 
-        body: t.Object({ 
-            data: t.String() 
-        }) 
-    })
+    .use(getUserId)
+    .put('/', ({ note, body: { data }, username }) =>
+    	note.add({ data, author: username }),
+     	{ 
+     		body: 'memo'
+      	}
+    ) 
     .guard({
         params: t.Object({
             index: t.Number()
@@ -47,14 +67,13 @@ export const note = new Elysia({prefix:'/note'})
     ) 
     .patch( 
         '/:index', 
-        ({ note, params: { index }, body: { data }, error }) => { 
-            if (index in note.data) return note.update(index, data) 
+        ({ note, params: { index }, body: { data }, error, username }) => { 
+        if (index in note.data) 
+            return note.update(index, { data, author: username }) 
 
-            return error(422) 
-        }, 
+            return error(422)
+        },
         { 
-            body: t.Object({ 
-                data: t.String() 
-            }) 
+            body: 'memo'
         } 
     ) 
