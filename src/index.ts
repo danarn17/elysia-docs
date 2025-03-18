@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia,t } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 
 class Note {
@@ -11,6 +11,11 @@ const app = new Elysia()
   .get("/note", ({ note }) => note.data)
   .get('/note/:index', ({ note, params: { index } }) => {
     return note.data[index]
+  },
+    {
+      params: t.Object({
+      index: t.Number()
+    })
   })
   // .get("/hello", () => "Do you miss me?")
   .listen(3000);
