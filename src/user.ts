@@ -120,3 +120,12 @@ export const user = new Elysia({ prefix: '/user' })
             cookie: 'session'
         } 
     ) 
+export const getUserId = new Elysia()
+    .use(userService)
+    .guard({
+        cookie: 'session'
+    })
+    .resolve(({store : {session},cookie: {token}}) => ({
+        username: session[token.value]
+    }))
+    
