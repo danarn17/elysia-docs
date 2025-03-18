@@ -1,4 +1,4 @@
-import { Elysia,t } from "elysia";
+import { Elysia,error,t } from "elysia";
 import { swagger } from '@elysiajs/swagger'
 
 class Note {
@@ -10,7 +10,7 @@ const app = new Elysia()
   .decorate('note',new Note())
   .get("/note", ({ note }) => note.data)
   .get('/note/:index', ({ note, params: { index } }) => {
-    return note.data[index]
+    return note.data[index] ?? error(404)
   },
     {
       params: t.Object({
