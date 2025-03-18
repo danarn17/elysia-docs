@@ -15,15 +15,16 @@ class Note{
     }
 }
 
-export const note = new Elysia()
-    .decorate('note',new Note())
-    .get("/note", ({ note }) => note.data)
-    .put('/note', ({ note, body: { data } }) => note.add(data), { 
+export const note = new Elysia({prefix:'/note'})
+    .decorate('note', new Note())
+    .get('/',({note})=>note.data)
+    .get("/", ({ note }) => note.data)
+    .put('/', ({ note, body: { data } }) => note.add(data), { 
         body: t.Object({ 
             data: t.String() 
         }) 
     })
-    .get('/note/:index', ({ note, params: { index } }) => {
+    .get('/:index', ({ note, params: { index } }) => {
         return note.data[index] ?? error(404)
     },
         {
@@ -32,7 +33,7 @@ export const note = new Elysia()
         })
     })
     .delete( 
-        '/note/:index', 
+        '/:index', 
         ({ note, params: { index }, error }) => { 
             if (index in note.data) return note.remove(index) 
 
@@ -45,7 +46,7 @@ export const note = new Elysia()
         } 
     ) 
     .patch( 
-        '/note/:index', 
+        '/:index', 
         ({ note, params: { index }, body: { data }, error }) => { 
             if (index in note.data) return note.update(index, data) 
 
