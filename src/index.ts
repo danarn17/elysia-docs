@@ -8,7 +8,10 @@ class Note {
 const app = new Elysia()
   .use(swagger())
   .decorate('note',new Note())
-  .get("/note", ({note}) => note.data)
+  .get("/note", ({ note }) => note.data)
+  .get('/note/:index', ({ note, params: { index } }) => {
+    return note.data[index]
+  })
   // .get("/hello", () => "Do you miss me?")
   .listen(3000);
 
