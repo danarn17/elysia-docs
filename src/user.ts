@@ -8,14 +8,14 @@ export const userService = new Elysia({ name: 'user/service' })
     .model({
         signIn: t.Object({
             username: t.String({ minLength: 1 }),
-            password: t.String({minLength: 9})
+            password: t.String({ minLength: 8 })
         }),
         session: t.Cookie(
             {
-                token:t.Number()
+                token: t.Number()
             },
             {
-            secrets: 'elysa'
+                secrets: 'elysia'
             }
         ),
         optionalSession: t.Optional(t.Ref('session'))
@@ -23,35 +23,38 @@ export const userService = new Elysia({ name: 'user/service' })
     .macro({
         isSignIn(enabled: boolean) {
             if (!enabled) return
-            
+
             return {
-                beforeHandle({ error, cookie: { token }, store: { session } }) {
+            	beforeHandle({ error, cookie: { token }, store: { session } }) {
                     if (!token.value)
                         return error(401, {
                             success: false,
                             message: 'Unauthorized'
                         })
+
                     const username = session[token.value as unknown as number]
-                    
+
                     if (!username)
                         return error(401, {
                             success: false,
-                            message:'Unauthorized'
+                            message: 'Unauthorized'
                         })
                 }
             }
         }
     })
+
 export const getUserId = new Elysia()
     .use(userService)
     .guard({
-        as: 'scoped', 
     	isSignIn: true,
         cookie: 'session'
     })
-    .resolve({ as: 'scoped' },({store : {session},cookie: {token}}) => ({
+    .resolve(({ store: { session }, cookie: { token } }) => ({
         username: session[token.value]
     }))
+    .as('plugin')
+
 export const user = new Elysia({ prefix: '/user' })
     .use(userService)
     .put(
@@ -62,7 +65,9 @@ export const user = new Elysia({ prefix: '/user' })
                     success: false,
                     message: 'User already exists'
                 })
+
             store.user[username] = await Bun.password.hash(password)
+
             return {
                 success: true,
                 message: 'User created'
@@ -100,34 +105,25 @@ export const user = new Elysia({ prefix: '/user' })
         },
         {
             body: 'signIn',
-            cookie: 'session'
+            cookie: 'optionalSession'
         }
     )
-    .get( 
-        '/sign-out', 
-        ({ cookie: { token } }) => { 
-            token.remove() 
-            return { 
-                success: true, 
-                message: 'Signed out'
-            } 
-        }, 
-        { 
-            cookie: 'optionalSession'
-        } 
-    ) 
-    .use(getUserId)
-    .get( 
-        '/profile', 
-        ({ username }) => { 
-            return { 
-                success: true, 
-                username 
-            } 
-        }, 
-        { 
-            isSignIn: true,
-            cookie: 'session'
-        } 
-    ) 
+    .get(
+        '/sign-out',
+        ({ cookie: { token } }) => {
+            token.remove()
 
+            return {
+                success: true,
+                message: 'Signed out'
+            }
+        },
+        {
+            cookie: 'optionalSession'
+        }
+    )
+    .use(getUserId)
+    .get('/profile', ({ username }) => ({
+        success: true,
+        username
+    }))
